@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Binary Search Visualizer</title>
+<style>
+
+  :root {
+    color-scheme: light;
+    --red: #ff4054;
+    --yellow: #ffe34b;
+    --green: #79ed9d;
+    --blue: #79d9ff;
+    --purple: #d5a5ff;
+    --card-width: 64px;
+    --gap: 12px;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    padding: 8px;
+    background: #edf3ff;
+    color: #000;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 14px;
+    line-height: 1.4;
+  }
+
+  button, input, select, output {
+    color: #000;
+    font: inherit;
+  }
+
+  main { width: 100%; max-width: none; margin: auto; }
+  h1 { margin: 0 0 5px; font-size: 26px; }
+  h2 { margin: 0; font-size: 17px; }
+  p { margin: 6px 0; }
+  header { margin-bottom: 14px; }
+
+  .panel {
+    padding: 12px;
+    margin-bottom: 10px;
+    border: 2px solid #000;
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 3px 3px 0 #cbd8ff;
+  }
+
+  .input-grid {
+    display: grid;
+    grid-template-columns: minmax(160px, 1fr) 200px auto;
+    align-items: end;
+    gap: 12px;
+  }
+
+  label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 700;
+  }
+
+  input[type="text"], select {
+    width: 100%;
+    height: 38px;
+    padding: 7px 10px;
+    border: 2px solid #000;
+    border-radius: 7px;
+    background: #fff;
+  }
+
+  button {
+    min-height: 38px;
+    padding: 7px 13px;
+    border: 2px solid #000;
+    border-radius: 7px;
+    background: var(--blue);
+    font-weight: 800;
+    cursor: pointer;
+    box-shadow: 2px 2px 0 #000;
+  }
+
+  button:hover:not(:disabled) { filter: brightness(1.07); }
+  button:active:not(:disabled) {
+    transform: translate(1px, 1px);
+    box-shadow: 1px 1px 0 #000;
+  }
+  button:disabled {
+    background: #ddd;
+    box-shadow: none;
+    cursor: not-allowed;
+  }
+
+  #next { background: var(--yellow); }
+  #play { background: var(--green); }
+  #reset { background: var(--purple); }
+
+  :focus-visible {
+    outline: 3px solid #000;
+    outline-offset: 3px;
+  }
+
+  .controls {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 13px;
+  }
+
+  .speed {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-left: auto;
+  }
+  .speed label { margin: 0; white-space: nowrap; }
+  .speed input { width: 125px; accent-color: #000; }
+
+  .error {
+    margin: 10px 0 0;
+    padding: 8px;
+    border: 1px solid #000;
+    border-radius: 6px;
+    background: #ffbac2;
+    font-weight: 700;
+  }
+  .error:empty { display: none; }
+
+  .heading-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .badge {
+    padding: 4px 10px;
+    border: 2px solid #000;
+    border-radius: 15px;
+    background: var(--yellow);
+    font-size: 12px;
+    font-weight: 800;
+  }
+
+  .workspace {
+    display: grid;
+    grid-template-columns: 220px minmax(0, 1fr);
+    gap: 12px;
+    margin-top: 12px;
+    align-items: start;
+  }
+
+  .visual-area { min-width: 0; grid-column: 2; grid-row: 1; }
+  .live-state { grid-column: 1; grid-row: 1; }
+
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px 13px;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .legend span {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .swatch {
+    display: inline-block;
+    width: 13px;
+    height: 13px;
+    background: var(--color);
+    border: 1px solid #000;
+    border-radius: 3px;
+  }
+
+  .array-scroll {
+    overflow-x: auto;
+    padding: 6px 8px 10px;
+    margin: 0 -8px;
+  }
+
+  .stage {
+    position: relative;
+    isolation: isolate;
+    width: max-content;
+    min-width: 100%;
+    margin-top: 8px;
+    padding-top: 150px;
+    padding-bottom: 36px;
+  }
+
+  .cards {
+    display: flex;
+    width: max-content;
+    gap: var(--gap);
+  }
+
+  .card {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--card-width);
+    height: 64px;
+    border: 2px solid #000;
+    border-radius: 9px;
+    background: #fff;
+    transition: background .2s, box-shadow .2s;
+  }
+
+  .value {
+    position: relative;
+    display: block;
+    max-width: 100%;
+    padding: 3px;
+    font-size: 20px;
+    font-weight: 900;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .index {
+    position: absolute;
+    top: calc(100% + 7px);
+    left: 50%;
+    transform: translateX(-50%);
+    min-width: 31px;
+    padding: 1px 7px;
+    border: 1px solid #000;
+    border-radius: 5px;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 900;
+  }
+
+  .card.candidate { background: var(--yellow); }
+  .card.scanning { box-shadow: 0 0 0 4px var(--red); }
+  .card.sorted { background: var(--green); }
+  .card.swapping {
+    background: var(--purple);
+    box-shadow: 0 0 0 4px #e3b8ff;
+  }
+
+  .sorted-tag {
+    position: absolute;
+    bottom: 3px;
+    font-size: 9px;
+    font-weight: 900;
+    letter-spacing: .5px;
+  }
+
+  /* Both arrow tips end exactly at the top of the array boxes.
+     Separate arrow lanes keep both visible on the same element. */
+  .pointer {
+    position: absolute;
+    left: 0;
+    width: var(--card-width);
+    text-align: center;
+    pointer-events: none;
+    z-index: 3;
+    transition: transform .28s ease;
+  }
+
+  .pointer-label {
+    display: block;
+    height: 30px;
+    padding: 3px 4px;
+    border: 2px solid #000;
+    border-radius: 6px;
+    font-size: 14px;
+    line-height: 20px;
+    font-weight: 900;
+    background: var(--label-color);
+  }
+
+  .pointer-arrow {
+    display: block;
+    position: relative;
+    width: 8px;
+    height: var(--arrow-height);
+    margin-left: calc(50% - 4px + var(--lane));
+  }
+
+  .pointer-arrow::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 14px;
+    background: var(--arrow-color);
+  }
+
+  .pointer-arrow::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: -8px;
+    width: 0;
+    height: 0;
+    border-left: 12px solid transparent;
+    border-right: 12px solid transparent;
+    border-top: 14px solid var(--arrow-color);
+  }
+
+  .pointer.red {
+    top: 0;
+    --arrow-height: 120px;
+    --arrow-color: var(--red);
+    --label-color: #ff8d99;
+    --lane: -14px;
+  }
+
+  .pointer.black {
+    top: 42px;
+    --arrow-height: 64px;
+    --arrow-color: #000;
+    --label-color: #ddd;
+    --lane: 14px;
+  }
+
+  .state-title { margin: 0 0 8px; font-size: 15px; }
+
+  .state-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 9px;
+    margin: 0;
+  }
+
+  .stat {
+    min-width: 0;
+    padding: 10px 8px;
+    border: 2px solid #000;
+    border-radius: 8px;
+  }
+
+  .stat.red-stat { background: #ff8d99; }
+  .stat.black-stat { background: #ddd; }
+  .stat.target-stat { background: var(--yellow); }
+  .stat.value-stat { background: var(--blue); }
+
+  .stat dt {
+    font-family: ui-monospace, Consolas, monospace;
+    font-size: 14px;
+    font-weight: 900;
+    overflow-wrap: anywhere;
+  }
+
+  .stat dd {
+    margin: 6px 0 0;
+    font-family: ui-monospace, Consolas, monospace;
+    font-size: 20px;
+    font-weight: 900;
+    overflow-wrap: anywhere;
+  }
+
+  .metrics {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 7px;
+    margin-top: 10px;
+    font-size: 12px;
+  }
+
+  .order-note {
+    margin-top: 10px;
+    padding: 8px;
+    border: 1px solid #000;
+    border-radius: 6px;
+    background: #eef0ff;
+    font-size: 12px;
+  }
+
+  .explanation {
+    margin-top: 10px;
+    padding: 11px 13px;
+    border: 2px solid #000;
+    border-left-width: 6px;
+    border-radius: 8px;
+    background: #fff1a6;
+    font-size: 14px;
+    font-weight: 650;
+  }
+  .explanation.done { background: var(--green); }
+
+  .hint { font-size: 12px; }
+  details { margin-top: 10px; }
+  summary { cursor: pointer; font-size: 13px; font-weight: 700; }
+  .log { max-height: 160px; overflow-y: auto; padding-left: 25px; font-size: 13px; }
+  .log li { padding: 4px 0; }
+
+  [hidden] { display: none !important; }
+
+  @media (max-width: 900px) {
+    .workspace { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+    .live-state { order: -1; grid-column: auto; grid-row: auto; }
+    .visual-area { grid-column: auto; grid-row: auto; }
+    .state-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .state-title { display: none; }
+    .metrics { display: flex; flex-wrap: wrap; gap: 7px 16px; }
+    .order-note { margin-top: 6px; padding: 5px 8px; }
+  }
+
+  @media (max-width: 600px) {
+    body { padding: 6px; }
+    h1 { font-size: 22px; }
+    .panel { padding: 10px; }
+    .input-grid { grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
+    .array-input-group { grid-column: 1 / -1; }
+    .speed { margin-left: 0; flex-wrap: wrap; }
+    .speed input { width: 110px; }
+    .stat { padding: 7px 5px; }
+    .stat dt { font-size: 11px; }
+    .stat dd { font-size: 20px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { transition: none !important; }
+  }
+  .code-panel { margin-top: 16px; }
+  .code-list { overflow-x: auto; background: #f5f7fc; border: 2px solid #000; border-radius: 8px; padding: 10px 0; font: 14px/1.65 ui-monospace, Consolas, monospace; }
+  .code-line { display: block; white-space: pre; padding: 0 14px; min-width: max-content; border-left: 5px solid transparent; }
+  .code-line.active { background: #ffe34b; border-left-color: #ff4054; font-weight: 800; }
+  .line-number { display: inline-block; width: 28px; color: #596377; user-select: none; }
+
+  .input-grid { grid-template-columns: minmax(180px, 1fr) 205px 110px auto; }
+  .element-row { display:flex; align-items:center; gap:10px; margin-top:10px; flex-wrap:wrap; }
+  .element-row label { margin:0; font-size:12px; }
+  .element-row select { width:auto; max-width:100%; }
+  .stage { padding-top:180px; padding-bottom:43px; }
+  .pointer.start { top:0; --arrow-height:150px; --arrow-color:#ff4054; --label-color:#ff8d99; --lane:-18px; }
+  .pointer.end { top:42px; --arrow-height:108px; --arrow-color:#000; --label-color:#ddd; --lane:18px; }
+  .pointer.mid { top:84px; --arrow-height:66px; --arrow-color:#1967bd; --label-color:#79d9ff; --lane:0px; }
+  .pointer-label { font-size:11px; }
+  .card.active-range { background:#fff1a6; }
+  .card.eliminated { background:#e2e6ed; color:#626979; border-color:#89909b; }
+  .card.middle { box-shadow:inset 0 0 0 4px #1967bd; }
+  .card.answer { background:var(--green); color:#000; border-color:#000; }
+  .card.outside { background:#f5f7fc; border:2px dashed #a6aebb; color:#626979; }
+  .outside .value { font-size:12px; text-align:center; }
+  .outside .index { font-size:13px; background:#eef0ff; }
+  .stat small { display:block; margin-top:4px; font:12px/1.4 ui-monospace,Consolas,monospace; overflow-wrap:anywhere; }
+  .result-stat { background:var(--green); }
+  .stat dd { font-size:22px; }
+  .answer-box { margin-top:10px; border:2px solid #000; border-radius:8px; padding:10px; background:#eef0ff; font-weight:700; }
+  .code-list { margin-bottom:0; }
+  .live-state .hint { margin-top:10px; }
+  @media(max-width:1000px) { .input-grid { grid-template-columns:minmax(170px,1fr) 205px; } }
+  @media(max-width:600px) {
+    .input-grid { grid-template-columns:minmax(0,1fr) 110px; }
+    .array-input-group { grid-column:1/-1; }
+    .mode-group { grid-column:1/-1; }
+    .input-grid button { grid-column:1/-1; }
+    .state-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Binary Search Visualizer</h1>
+    <p>Follow start, end, and mid, compare arr[mid] with the key, and narrow the search range.</p>
+  </header>
+  <section class="panel" aria-label="Input and step controls">
+    <form id="input-form" novalidate>
+      <div class="input-grid">
+        <div class="array-input-group">
+          <label for="array-input">Comma-separated integers</label>
+          <input id="array-input" type="text" value="11, 22, 22, 22, 33, 44, 55, 66, 77" autocomplete="off" spellcheck="false" aria-describedby="input-error sorting-note">
+        </div>
+        <div class="mode-group">
+          <label for="mode">Search type</label>
+          <select id="mode">
+            <option value="asc">Binary search · ascending</option>
+            <option value="desc">Binary search · descending</option>
+            <option value="first">First occurrence · ascending</option>
+            <option value="last">Last occurrence · ascending</option>
+          </select>
+        </div>
+        <div>
+          <label for="key-input">Key / element</label>
+          <input id="key-input" type="text" value="22" inputmode="numeric" autocomplete="off" aria-describedby="input-error">
+        </div>
+        <button type="submit">Initialize Array</button>
+      </div>
+      <div class="element-row">
+        <label for="element-select">Or select an element:</label>
+        <select id="element-select" aria-label="Choose an existing element or enter a custom key"></select>
+      </div>
+      <p id="sorting-note" class="hint">Initialize sorts the input for the selected search. All indices are zero-based and refer to the displayed sorted array.</p>
+      <p id="input-error" class="error" role="alert"></p>
+    </form>
+    <div class="controls">
+      <button type="button" id="previous">Previous Step</button>
+      <button type="button" id="next">Next Step</button>
+      <button type="button" id="play" aria-pressed="false">Auto Play</button>
+      <button type="button" id="reset">Reset</button>
+      <div class="speed">
+        <label for="speed">Delay: <output id="speed-value" for="speed">800 ms</output></label>
+        <input id="speed" type="range" min="150" max="2000" step="50" value="800">
+      </div>
+    </div>
+  </section>
+
+  <section class="panel" aria-labelledby="visual-heading">
+    <div class="heading-row">
+      <h2 id="visual-heading">Array &amp; live variables</h2>
+      <span id="phase-badge" class="badge">Ready</span>
+    </div>
+    <div class="workspace">
+      <div class="visual-area">
+        <div class="legend" aria-label="Color legend">
+          <span><i class="swatch" style="--color:#ff4054"></i>start</span>
+          <span><i class="swatch" style="--color:#000"></i>end</span>
+          <span><i class="swatch" style="--color:#1967bd"></i>mid</span>
+          <span><i class="swatch" style="--color:#fff1a6"></i>Search range</span>
+          <span><i class="swatch" style="--color:#e2e6ed"></i>Eliminated</span>
+          <span><i class="swatch" style="--color:#79ed9d"></i>Saved answer</span>
+        </div>
+        <div id="array-scroll" class="array-scroll" tabindex="0" aria-label="Array visualization. Scroll horizontally for additional elements.">
+          <div class="stage">
+            <div id="start-pointer" class="pointer start" aria-hidden="true"><span class="pointer-label">start</span><span class="pointer-arrow"></span></div>
+            <div id="end-pointer" class="pointer end" aria-hidden="true"><span class="pointer-label">end</span><span class="pointer-arrow"></span></div>
+            <div id="mid-pointer" class="pointer mid" aria-hidden="true"><span class="pointer-label">mid</span><span class="pointer-arrow"></span></div>
+            <div id="cards" class="cards"></div>
+          </div>
+        </div>
+        <p class="hint">Arrows point to indices. Dashed boxes represent outside-array positions −1 and n. Stacked arrows stay visible when pointers meet.</p>
+        <p id="mid-note" class="hint"></p>
+      </div>
+      <aside class="live-state" aria-label="Live algorithm variables">
+        <h2 class="state-title">Live variables</h2>
+        <dl class="state-grid">
+          <div class="stat red-stat"><dt>start</dt><dd id="start-state">0</dd><small id="start-value"></small></div>
+          <div class="stat black-stat"><dt>end</dt><dd id="end-state"></dd><small id="end-value"></small></div>
+          <div class="stat value-stat"><dt>mid</dt><dd id="mid-state">—</dd><small id="mid-value"></small></div>
+          <div class="stat target-stat"><dt>element (key)</dt><dd id="key-state">22</dd><small>Value to search for</small></div>
+          <div id="result-stat" class="stat result-stat"><dt>result</dt><dd id="result-state">−1</dd><small id="result-note">Saved matching index</small></div>
+        </dl>
+        <div class="metrics">
+          <span>Iteration: <strong id="iteration-state">0</strong></span>
+          <span>Step: <strong id="step-state">0</strong></span>
+        </div>
+        <div id="order-note" class="order-note"></div>
+        <div id="answer" class="answer-box" role="status" aria-live="polite">Search in progress</div>
+      </aside>
+    </div>
+    <div id="explanation" class="explanation" role="status" aria-live="polite" aria-atomic="true"></div>
+    <section class="code-panel" aria-label="Binary search C++ code">
+      <h2>C++ code · executing line</h2>
+      <p class="hint">Yellow highlights the line executed by the latest step. The code follows the supplied binary search functions. First and last occurrence save result, then keep searching.</p>
+      <pre class="code-list"><code id="source-code"></code></pre>
+    </section>
+    <details><summary>Step history</summary><ol id="log" class="log"></ol></details>
+  </section>
+</main>
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const modes = {
+  asc: { name:"Binary search · ascending", fn:"bin_search_asc", descending:false },
+  desc: { name:"Binary search · descending", fn:"bin_search_desc", descending:true },
+  first: { name:"First occurrence · ascending", fn:"bin_search_first_occurence", descending:false },
+  last: { name:"Last occurrence · ascending", fn:"bin_search_last_occurence", descending:false }
+};
+const indexColors = ["#79d9ff", "#ffb86b", "#e0a0ff", "#89efa8", "#ffe34b", "#afb5ff"];
+let active = null, frames = [], cursor = 0, playing = false, timer = null;
+let sourceLines = [], lineByTag = {};
+const occurrence = mode => mode === "first" || mode === "last";
+
+function makeCode(mode) {
+  const rows = [], tags = {};
+  const add = (text, tag) => { rows.push(text); if(tag) tags[tag] = rows.length - 1; };
+  add(`int ${modes[mode].fn}(int arr[], int n, int element)`);
+  add("{");
+  add("    int start, end, mid;");
+  add("    start = 0;", "start");
+  add("    end = n - 1;", "end");
+  if (occurrence(mode)) add("    int result = -1;", "initResult");
+  add("    while (start <= end)", "while");
+  add("    {");
+  add("        mid = (start + end) / 2;", "mid");
+  add("        if (arr[mid] == element)", "equal");
+  add("        {");
+  if (occurrence(mode)) {
+    add("            result = mid;", "save");
+    add(mode === "first" ? "            end = mid - 1;" : "            start = mid + 1;", "matchMove");
+  } else add("            return mid;", "found");
+  add("        }");
+  add(`        else if (arr[mid] ${modes[mode].descending ? ">" : "<"} element)`, "compare");
+  add("        {");
+  add("            start = mid + 1;", "right");
+  add("        }");
+  add("        else", "else");
+  add("        {");
+  add("            end = mid - 1;", "left");
+  add("        }");
+  add("    }");
+  add(occurrence(mode) ? "    return result;" : "    return -1;", "return");
+  add("}");
+  return {rows, tags};
+}
+
+// Each frame is the state immediately AFTER one highlighted statement runs.
+function buildFrames(array, key, mode) {
+  const out = [];
+  const s = {start:null, end:null, mid:null, result:null, iteration:0, done:false, answer:null, stale:false};
+  const push = (tag, message, phase) => out.push({...s, tag, message, phase});
+  push(null, "Ready. Initialize start and end, then check whether the search range is non-empty.", "Ready");
+  s.start = 0; push("start", "Set start = 0, the first index.", "Initialize start");
+  s.end = array.length - 1; push("end", `Set end = n − 1 = ${s.end}, the last index.`, "Initialize end");
+  if (occurrence(mode)) { s.result = -1; push("initResult", "Set result = −1. No matching index has been saved yet.", "Initialize result"); }
+  while (true) {
+    const valid = s.start <= s.end;
+    push("while", `Check start <= end: ${s.start} <= ${s.end} is ${valid ? "true. Continue searching." : "false. The search range is empty; exit the loop."}`, "Check range");
+    if (!valid) break;
+    s.iteration++;
+    s.mid = Math.floor((s.start + s.end) / 2); s.stale = false;
+    push("mid", `mid = (${s.start} + ${s.end}) / 2 = ${s.mid} (integer division). arr[${s.mid}] = ${array[s.mid]}.`, "Calculate mid");
+    const equal = array[s.mid] === key;
+    push("equal", `Compare arr[mid] == element: ${array[s.mid]} == ${key} is ${equal}.`, "Compare key");
+    if (equal) {
+      if (!occurrence(mode)) {
+        s.done = true; s.answer = s.mid;
+        push("found", `Found ${key} at index ${s.mid}. Return mid = ${s.mid}. A regular binary search may return any matching index when duplicates exist.`, "Found");
+        return out;
+      }
+      s.result = s.mid;
+      push("save", `Save result = mid = ${s.result}. A match is saved, but an earlier/later occurrence may still exist.`, "Save result");
+      if (mode === "first") {
+        s.end = s.mid - 1; s.stale = true;
+        push("matchMove", `Keep result = ${s.result}. Set end = mid − 1 = ${s.end} to search the left half for the first occurrence.`, "Search earlier");
+      } else {
+        s.start = s.mid + 1; s.stale = true;
+        push("matchMove", `Keep result = ${s.result}. Set start = mid + 1 = ${s.start} to search the right half for the last occurrence.`, "Search later");
+      }
+    } else {
+      const goRight = modes[mode].descending ? array[s.mid] > key : array[s.mid] < key;
+      push("compare", `Compare arr[mid] ${modes[mode].descending ? ">" : "<"} element: ${array[s.mid]} ${modes[mode].descending ? ">" : "<"} ${key} is ${goRight}.`, "Choose half");
+      if (goRight) {
+        s.start = s.mid + 1; s.stale = true;
+        push("right", `Set start = mid + 1 = ${s.start}. ${modes[mode].descending ? "Smaller" : "Larger"} values lie to the right; discard mid and everything to its left.`, "Move start");
+      } else {
+        push("else", `Take the else branch. ${modes[mode].descending ? "Larger" : "Smaller"} values lie to the left.`, "Choose left half");
+        s.end = s.mid - 1; s.stale = true;
+        push("left", `Set end = mid − 1 = ${s.end}. Discard mid and everything to its right.`, "Move end");
+      }
+    }
+  }
+  s.done = true; s.answer = occurrence(mode) ? s.result : -1;
+  push("return", s.answer === -1 ? `Return −1. The element ${key} is not in the array.` : `Return result = ${s.result}. The ${mode} occurrence of ${key} is at index ${s.result}.`, s.answer === -1 ? "Not found" : "Found");
+  return out;
+}
+
+function readInteger(text, label) {
+  const value = text.trim();
+  if (!/^[+-]?\d+$/.test(value) || !Number.isSafeInteger(Number(value))) throw new Error(`${label} must be a whole number within the safe integer range.`);
+  return Number(value);
+}
+function initialize(event) {
+  if (event) event.preventDefault();
+  pause();
+  try {
+    const pieces = $("array-input").value.trim().split(",");
+    if (pieces.length > 40) throw new Error("Use at most 40 integers so the visualization stays readable.");
+    const array = pieces.map((v,i) => readInteger(v, `Element ${i + 1}`));
+    const key = readInteger($("key-input").value, "Key");
+    const mode = $("mode").value;
+    array.sort((a,b) => modes[mode].descending ? (a < b ? 1 : a > b ? -1 : 0) : (a < b ? -1 : a > b ? 1 : 0));
+    active = {array, key, mode};
+    frames = buildFrames(array, key, mode); cursor = 0;
+    $("input-error").textContent = "";
+    $("array-input").value = array.join(", ");
+    $("key-input").value = key;
+    const code = makeCode(mode); sourceLines = code.rows; lineByTag = code.tags;
+    createCode(); createCards(); createChoices(); render();
+    $("array-scroll").scrollLeft = 0;
+  } catch (error) { $("input-error").textContent = error.message; }
+}
+function createChoices() {
+  const select = $("element-select"); select.replaceChildren();
+  const custom = document.createElement("option"); custom.value = "custom"; custom.textContent = "Custom / absent key (type above)"; select.append(custom);
+  [...new Set(active.array)].forEach(value => {
+    const option = document.createElement("option"); option.value = String(value); option.textContent = String(value); select.append(option);
+  });
+  select.value = active.array.includes(active.key) ? String(active.key) : "custom";
+}
+function createCode() {
+  $("source-code").replaceChildren();
+  sourceLines.forEach((line,index) => {
+    const row = document.createElement("span"); row.className = "code-line";
+    const number = document.createElement("span"); number.className = "line-number"; number.textContent = index + 1;
+    row.append(number, document.createTextNode(line)); $("source-code").append(row);
+  });
+}
+function createCards() {
+  $("cards").replaceChildren();
+  [null, ...active.array, null].forEach((value, slot) => {
+    const index = slot - 1, outside = index === -1 || index === active.array.length;
+    const card = document.createElement("div"); card.className = outside ? "card outside" : "card";
+    const number = document.createElement("span"); number.className = "value"; number.textContent = outside ? "Outside\narray" : String(value);
+    if (!outside) number.style.fontSize = String(value).length > 11 ? "10px" : String(value).length > 6 ? "14px" : "20px";
+    const badge = document.createElement("span"); badge.className = "index"; badge.textContent = index === active.array.length ? `n = ${index}` : index;
+    if (!outside) badge.style.background = indexColors[index % indexColors.length];
+    card.append(number,badge); $("cards").append(card);
+  });
+}
+function movePointer(name, index) {
+  const pointer = $(`${name}-pointer`); pointer.hidden = index === null;
+  if (index !== null) {
+    const card = $("cards").children[index + 1];
+    pointer.style.transform = `translateX(${card.offsetLeft}px)`;
+    pointer.querySelector(".pointer-label").textContent = `${name} = ${index}`;
+  }
+}
+function arrayValue(index, name) {
+  if (index === null) return "Not assigned yet";
+  return index < 0 || index >= active.array.length ? "Outside array" : `arr[${name}] = ${active.array[index]}`;
+}
+function render() {
+  const s = frames[cursor]; if (!s) return;
+  ["start","end","mid"].forEach(name => {
+    $(`${name}-state`).textContent = s[name] === null ? "—" : s[name];
+    $(`${name}-value`).textContent = arrayValue(s[name], name);
+    movePointer(name, s[name]);
+  });
+  $("key-state").textContent = active.key;
+  $("result-stat").hidden = !occurrence(active.mode);
+  $("result-state").textContent = s.result === null ? "—" : s.result;
+  $("result-note").textContent = s.result === null ? "Not assigned yet" : s.result === -1 ? "No match saved yet" : `arr[result] = ${active.array[s.result]}`;
+  $("iteration-state").textContent = s.iteration;
+  $("step-state").textContent = `${cursor} / ${frames.length - 1}`;
+  $("order-note").textContent = `${modes[active.mode].name}. n = ${active.array.length}. ${occurrence(active.mode) ? "result is an index, not an array value." : "Duplicates: any matching index may be returned."}`;
+  $("mid-note").textContent = s.mid === null ? "mid is not assigned until the first loop iteration." : s.stale && !s.done ? "mid still holds its previous value. It is recalculated only if the next loop check succeeds." : "mid = floor((start + end) / 2) when the highlighted assignment executes.";
+  if (s.done) $("mid-note").textContent = "The search has ended. Pointer values remain at their final state.";
+  $("explanation").textContent = s.message;
+  $("explanation").classList.toggle("done", s.done);
+  $("phase-badge").textContent = s.phase;
+  $("phase-badge").style.background = s.done ? "var(--green)" : "var(--yellow)";
+  $("answer").textContent = s.done ? s.answer === -1 ? `Not found · return −1` : `${active.mode === "first" ? "First occurrence" : active.mode === "last" ? "Last occurrence" : "Found"} · index ${s.answer} · value ${active.key}` : occurrence(active.mode) && s.result !== null && s.result >= 0 ? `Saved candidate: index ${s.result}. Continue searching.` : "Search in progress";
+  [...$("cards").children].forEach((card,slot) => {
+    const i = slot - 1; if (i < 0 || i >= active.array.length) return;
+    const inside = s.start === null || s.end === null || (i >= s.start && i <= s.end);
+    const answer = s.done ? s.answer === i : occurrence(active.mode) && s.result === i;
+    card.className = `card ${inside && !s.done ? "active-range" : "eliminated"}${s.mid === i ? " middle" : ""}${answer ? " answer" : ""}`;
+    card.title = `Index ${i}: ${active.array[i]}${answer ? ", saved answer" : ""}`;
+  });
+  [...$("source-code").children].forEach((line,index) => line.classList.toggle("active", s.tag !== null && index === lineByTag[s.tag]));
+  $("log").replaceChildren();
+  frames.slice(0,cursor+1).forEach(frame => { const li = document.createElement("li"); li.textContent = frame.message; $("log").append(li); });
+  $("log").scrollTop = $("log").scrollHeight;
+  $("previous").disabled = cursor === 0;
+  $("next").disabled = s.done || playing;
+  $("play").disabled = s.done;
+  if (s.done) pause();
+}
+function focusMid() {
+  const s = frames[cursor];
+  const index = s.mid === null ? s.start : s.mid;
+  if (index === null) return;
+  const card = $("cards").children[index + 1], scroller = $("array-scroll");
+  if (card.offsetLeft < scroller.scrollLeft || card.offsetLeft + card.offsetWidth > scroller.scrollLeft + scroller.clientWidth) {
+    scroller.scrollTo({left:Math.max(0,card.offsetLeft - (scroller.clientWidth-card.offsetWidth)/2), behavior:window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth"});
+  }
+}
+function pause() {
+  playing = false; clearTimeout(timer); timer = null;
+  $("play").textContent = "Auto Play"; $("play").setAttribute("aria-pressed","false");
+  $("next").disabled = !active || frames[cursor].done;
+}
+function advance() { if (cursor < frames.length - 1) { cursor++; render(); focusMid(); } }
+function schedule() {
+  clearTimeout(timer);
+  if (playing) timer = setTimeout(() => { advance(); if (playing) schedule(); }, Number($("speed").value));
+}
+$("input-form").addEventListener("submit", initialize);
+$("mode").addEventListener("change", initialize);
+$("key-input").addEventListener("change", initialize);
+$("array-input").addEventListener("change", () => { pause(); $("input-error").textContent = "Array edited. Select Initialize Array to apply your changes."; });
+$("element-select").addEventListener("change", () => {
+  if ($("element-select").value === "custom") { $("key-input").focus(); $("key-input").select(); return; }
+  $("key-input").value = $("element-select").value; initialize();
+});
+$("next").addEventListener("click", () => { pause(); advance(); });
+$("previous").addEventListener("click", () => { pause(); if (cursor > 0) { cursor--; render(); focusMid(); } });
+$("reset").addEventListener("click", () => { pause(); cursor = 0; render(); $("array-scroll").scrollLeft = 0; });
+$("play").addEventListener("click", () => {
+  if (playing) { pause(); return; }
+  if (!active || frames[cursor].done) return;
+  playing = true; $("play").textContent = "Pause"; $("play").setAttribute("aria-pressed","true"); $("next").disabled = true; schedule();
+});
+$("speed").addEventListener("input", () => { $("speed-value").textContent = `${$("speed").value} ms`; if (playing) schedule(); });
+window.addEventListener("resize", () => { if (active) render(); });
+initialize();
+</script>
+</body>
+</html>
